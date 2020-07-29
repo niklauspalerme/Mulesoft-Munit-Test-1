@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:sap="http://www.mulesoft.org/schema/mule/sap"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:kcc-utils="http://www.mulesoft.org/schema/mule/kcc-utils"
+	xmlns:smart-logger="http://www.mulesoft.org/schema/mule/smart-logger"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/smart-logger http://www.mulesoft.org/schema/mule/smart-logger/current/mule-smart-logger.xsd
+http://www.mulesoft.org/schema/mule/kcc-utils http://www.mulesoft.org/schema/mule/kcc-utils/current/mule-kcc-utils.xsd
+http://www.mulesoft.org/schema/mule/sap http://www.mulesoft.org/schema/mule/sap/current/mule-sap.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="stratifyd-implFlow" doc:id="01a95d8f-2b6b-48a3-9dff-f44ddf39ed9f" >
+		<kcc-utils:kc-logger doc:name="KC Logger" doc:id="9b3736dd-36ed-4195-8cd6-7b76c293450a" config-ref="KC_Utils_Config" logMessage=":::::::: Implementation of the status flow started :::::::::" level="INFO" interfaceName="Status Interface" category="org.kcc.apps.template" tracepoint="BEFORE_TRANSFORM" tracepointDesc="Before Mapping"/>
+		<ee:transform doc:name="Transform Message" doc:id="5a7c9630-2573-41e6-9830-7dbe9cc31426" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	fromDate: message.attributes.queryParams.fromdate default '2020-01-01',
+	toDate: message.attributes.queryParams.todate default '2020-01-01',
+	limit: 100 default 0
+}
+
+
+/// 14,15,16]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="a0edd43a-fa28-4acd-bde5-b78547cd9828" message="#[payload]"/>
+		<db:select doc:name="Hana call" doc:id="069b39e9-7738-4226-b0a2-0dae2f0f765c" config-ref="Hana_Config">
+			<db:sql><![CDATA[select  
+"COMMENTID", "AREANAME", "PHYSICALPRODUCTNAME", "PRODUCTNAME", "SPECNAME", "PLATFORM", 
+"USERNAME", "USERLEVEL", "TMALLMEMBER", "COMMENTCONTENT", "SENTIMENT", "TAG", "MONTH", 
+"COMMENTTIME", "BUYTIME", "REPLYSTATE", "STORENAME", "STORETYPE", "FIRSTREPLYCONTENT", 
+"REPLYBYER", "REPLYTIME", "PRODUCTURL", "FIRSTPROPERTY", "SECONDPROPERTY", "CATEGORY", "BRAND", 
+"COMMENTLEVEL", "ISDELETED", "USERAREA", "REVIEWCONTENT", "REVIEWREPLY", "BABY_PANT_SIZE", 
+"BABY_PANT_PRODUCT_LINE", "BABY_DIAPER_SIZE", "BABY_DIAPER_PRODUCT_LINE", "TAMPON_PRODUCT_LINE", 
+"SANITARY_NAPKIN_PRODUCT_LINE", "MENSTRUAL_HYGIENE_PANT_PRODUCT_LINE", "WET_TOILET_PACK", 
+"ADULT_PANTS_SIZE", "ADULT_DIAPER_SIZE", "NURSING_PAD_SIZE", "SUITE_SIZE", "TISSUE_PACK", "ROLLED_PAPER_PACK",
+ "WET_TISSUE_PACK", "POCKET_TISSUE_PACK", "SANITARY_NAPKIN_SERIES", "MENSTRUAL_HYGIENE_PANT_SERIES", "TAMPON_SERIES", "SANITARY_NAPKIN_TIER", "MENSTRUAL_HYGIENE_PANT_TIER", "TAMPON_TIER", "BABY_DIAPER_TIER", "BABY_PANT_TIER", "SANITARY_NAPKIN_LENGTH", "TAMPON_FLOW", "BABY_WET_TISSUE_TIER", "TAMPON_TUBE_TYPE", "BABY_DIAPER_SERIES", "BABY_PANT_SERIES", "COTTON_SOFT_TOWEL_PACK",
+ sum("COMMENT_COUNT") AS "COMMENT_COUNT" 
+from "_SYS_BIC"."KCC.AP_CUSTOM.DATA_LAKE/CV_CDL_CONSUMER_COMMENT"
+where COMMENTTIME >= :fromDate  and COMMENTTIME <= :toDate
+GROUP BY "COMMENTID", "AREANAME", "PHYSICALPRODUCTNAME", "PRODUCTNAME", "SPECNAME", "PLATFORM", "USERNAME", 
+"USERLEVEL", "TMALLMEMBER", "COMMENTCONTENT", "SENTIMENT", "TAG", "MONTH", "COMMENTTIME", "BUYTIME", "REPLYSTATE",
+"STORENAME", "STORETYPE", "FIRSTREPLYCONTENT", "REPLYBYER", "REPLYTIME", "PRODUCTURL", "FIRSTPROPERTY", "SECONDPROPERTY",
+"CATEGORY", "BRAND", "COMMENTLEVEL", "ISDELETED", "USERAREA", "REVIEWCONTENT", "REVIEWREPLY", "BABY_PANT_SIZE", 
+"BABY_PANT_PRODUCT_LINE", "BABY_DIAPER_SIZE", "BABY_DIAPER_PRODUCT_LINE", "TAMPON_PRODUCT_LINE", 
+"SANITARY_NAPKIN_PRODUCT_LINE", "MENSTRUAL_HYGIENE_PANT_PRODUCT_LINE", "WET_TOILET_PACK", "ADULT_PANTS_SIZE", 
+"ADULT_DIAPER_SIZE", "NURSING_PAD_SIZE", "SUITE_SIZE", "TISSUE_PACK", "ROLLED_PAPER_PACK", "WET_TISSUE_PACK", 
+"POCKET_TISSUE_PACK", "SANITARY_NAPKIN_SERIES", "MENSTRUAL_HYGIENE_PANT_SERIES", "TAMPON_SERIES",
+"SANITARY_NAPKIN_TIER", "MENSTRUAL_HYGIENE_PANT_TIER", "TAMPON_TIER", "BABY_DIAPER_TIER", "BABY_PANT_TIER",
+"SANITARY_NAPKIN_LENGTH", "TAMPON_FLOW", "BABY_WET_TISSUE_TIER", "TAMPON_TUBE_TYPE", "BABY_DIAPER_SERIES",
+"BABY_PANT_SERIES", "COTTON_SOFT_TOWEL_PACK" 
+limit :limit]]></db:sql>
+			<db:input-parameters><![CDATA[#[payload]]]></db:input-parameters>
+		</db:select>
+		<logger level="INFO" doc:name="Logger" doc:id="a598fbc5-afbf-4855-8e60-aaf572030597" message="#[sizeOf(payload)]" />
+		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="1c37310c-be83-45ca-9c0a-6234f6f7cf1b" doc:name="Mapping">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload map (item) -> {
+    babyWetTissueTier: item.BABY_WET_TISSUE_TIER,
+    commentCount: item.COMMENT_COUNT,
+    reviewReply: item.REVIEWREPLY,
+    pocketTissuePack : item.POCKET_TISSUE_PACK,
+    replyByer: item.REPLYBYER,
+    commentContent: item.COMMENTCONTENT,
+    replyTime: item.REPLYTIME,
+    babyDiaperSize: item.BABY_DIAPER_SIZE,
+    tamponSeries: item.TAMPON_SERIES,
+    storeName: item.STORENAME,
+    isDeleted: item.ISDELETED,
+    secondProperty: item.SECONDPROPERTY,
+    tmallMember: item.TMALLMEMBER,
+    tissuePack: item.TISSUE_PACK,
+    commentLevel: item.COMMENTLEVEL,
+    tag: item.TAG,
+    brand: item.BRAND,
+    menstrualHygienePantTier: item.MENSTRUAL_HYGIENE_PANT_TIER,
+    areaName: item.AREANAME,
+    babyDiaperTier: item.BABY_DIAPER_TIER,
+    specname: item.SPECNAME,
+    babyPantSeries: item.BABY_PANT_SERIES,
+    wetTissuePack: item.WET_TISSUE_PACK,
+    babyDiaperSeries: item.BABY_DIAPER_SERIES,
+    tamponFlow: item.TAMPON_FLOW,
+    fristProperty: item.FIRSTPROPERTY,
+    month: item.MONTH,
+    wetToiletPack: item.WET_TOILET_PACK,
+    replyState: item.REPLYSTATE,
+    sentiment: item.SENTIMENT,
+    sanitaryNapkinLenght: item.SANITARY_NAPKIN_LENGTH,
+    commenttime: item.COMMENTTIME,
+    menstrualHygienePantProductLine: item.MENSTRUAL_HYGIENE_PANT_PRODUCT_LINE,
+    firstReplyContent: item.FIRSTREPLYCONTENT,
+    platform: item.PLATFORM,
+    nursingPadSize: item.NURSING_PAD_SIZE,
+    babyDiaperProductLine: item.BABY_DIAPER_PRODUCT_LINE,
+    babyPantProductLine: item.BABY_PANT_PRODUCT_LINE,
+    suiteSize: item.SUITE_SIZE,
+    commentId: item.COMMENTID,
+    productName: item.PRODUCTNAME,
+    babyPantSize: item.BABY_PANT_SIZE,
+    productUrl: item.PRODUCTURL,
+    physicalProductName: item.PHYSICALPRODUCTNAME,
+    adultPantsSize: item.ADULT_PANTS_SIZE,
+    sanitaryNapkinSeries: item.SANITARY_NAPKIN_SERIES,
+    menstrualHygienePantSeries: item.MENSTRUAL_HYGIENE_PANT_SERIES,
+    tamponTubeType: item.TAMPON_TUBE_TYPE,
+    temponTier: item.TAMPON_TIER,
+    adultDiaperSize: item.ADULT_DIAPER_SIZE,
+    temponProductLine: item.TAMPON_PRODUCT_LINE,
+    storeType: item.STORETYPE,
+    userLevel: item.USERLEVEL,
+    sanitaryNapkinProductLine: item.SANITARY_NAPKIN_PRODUCT_LINE,
+    rolledPaperPack: item.ROLLED_PAPER_PACK,
+    cottonSoftTowelPack: item.COTTON_SOFT_TOWEL_PACK,
+    buyTime: item.BUYTIME,
+    reviewContent: item.REVIEWCONTENT,
+    userArea: item.USERAREA,
+    babyPantTier:item.BABY_PANT_TIER,
+    category: item.CATEGORY,
+    sanitaryNapkinTier: item.SANITARY_NAPKIN_TIER,
+    userName: item.USERNAME
+} ]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+		<kcc-utils:kc-logger doc:name="KC Logger" doc:id="5cbb0192-cf72-4651-8751-aeb12ebf74aa" config-ref="KC_Utils_Config" logMessage=":::::::: Implementation of the status flow Completed :::::::::" level="INFO" interfaceName="Status Interface" category="org.kcc.apps.template" tracepoint="AFTER_TRANSFORM" tracepointDesc="After Mapping"/>
+</sub-flow>
+</mule>
